@@ -8,7 +8,7 @@ $(TARGET): $(TARGET).c
 	$(CC) $(CFLAGS) -o bin/$(TARGET) $(TARGET).c
 
 $(TARGET)-wii: $(TARGET).c
-	$(CC) $(CFLAGS) -o bin/$(TARGET)-wii $(TARGET).c --target=powerpc--netbsd
+	$(CC) $(CFLAGS) -o bin/$(TARGET)-wii $(TARGET).c -march=powerpc
 
 clean:
 	$(RM) bin/$(TARGET) bin/$(TARGET)-wii
