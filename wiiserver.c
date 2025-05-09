@@ -70,6 +70,8 @@ static const int debug = 1;
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/utsname.h>
+
 
 /* The time formatting that we use in directory listings.                    */
 /* An example of the default is 2013-09-09 13:01, which should be compatible */
@@ -2205,12 +2207,30 @@ static void process_get(struct connection *conn) {
         }
         mimetype = url_content_type(index_name);
     }
+    else if (strcmp(decoded_url, "/serverstatus") == 0)
+    {
+        free(decoded_url);
+        struct utsname my_uname;
+        if(uname(&my_uname) == -1)
+        {
+            default_reply(conn, 200, "Server status",
+                "uname failed");
+        }
+        else
+        {
+            default_reply(conn, 200, "Server status",
+                "%s %s <br>%s", my_uname.sysname, my_uname.release, my_uname.machine);
+        }
+        return;
+    }
     else {
         /* points to a file */
         xasprintf(&target, "%s%s", wwwroot, decoded_url);
         mimetype = url_content_type(decoded_url);
     }
+
     free(decoded_url);
+    
     if (debug)
         printf("url=\"%s\", target=\"%s\", content-type=\"%s\"\n",
                conn->url, target, mimetype);
