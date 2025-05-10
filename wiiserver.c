@@ -2178,6 +2178,8 @@ char *str_replace(char *orig, char *rep, char *with) {
     return result;
 }
 
+char* buffer_cache;
+time_t cache_time;
 /* Process a GET/HEAD request. */
 static void process_get(struct connection *conn) {
     char *decoded_url, *end, *target, *if_mod_since;
@@ -2258,21 +2260,28 @@ static void process_get(struct connection *conn) {
         free(decoded_url);
         FILE *rd;
         char buffer[8192];
-        rd = popen("bsdfetch && top -b","r");
-        if (rd == NULL)
+        
+        time_t current_time = time(0);
+        if (buffer_cache != NULL && difftime(current_time, cache_time) < 15)
         {
-            default_reply(conn, 200, "Server status",
-            "Opening process failed");
+            default_reply(conn, 200, "Server status cached", "%s", buffer_cache);
         }
         else
         {
-            fread(buffer, 1, 8192, rd);
-            char* html_result = str_replace(buffer, "\n", "<br>");
-            default_reply(conn, 200, "Server status",
-            "%s", html_result);
-            if (html_result != NULL)
+            rd = popen("bsdfetch && top -b","r");
+            if (rd == NULL)
             {
-                free(html_result);
+                default_reply(conn, 200, "Server status",
+                "Opening process failed");
+            }
+            else
+            {
+                fread(buffer, 1, 8192, rd);
+                char* html_result = str_replace(buffer, "\n", "<br>");
+                default_reply(conn, 200, "Server status", "%s", html_result);
+                free(buffer_cache);
+                buffer_cache = html_result;
+                cache_time = time(0);
             }
         }
         return;
