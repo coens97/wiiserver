@@ -2132,6 +2132,52 @@ static void generate_dir_listing(struct connection *conn, const char *path,
     conn->http_code = 200;
 }
 
+char *str_replace(char *orig, char *rep, char *with) {
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep (the string to remove)
+    int len_with; // length of with (the string to replace rep with)
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    // sanity checks and initialization
+    if (!orig || !rep)
+        return NULL;
+    len_rep = strlen(rep);
+    if (len_rep == 0)
+        return NULL; // empty rep causes infinite loop during count
+    if (!with)
+        with = "";
+    len_with = strlen(with);
+
+    // count the number of replacements needed
+    ins = orig;
+    for (count = 0; (tmp = strstr(ins, rep)); ++count) {
+        ins = tmp + len_rep;
+    }
+
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return NULL;
+
+    // first time through the loop, all the variable are set correctly
+    // from here on,
+    //    tmp points to the end of the result string
+    //    ins points to the next occurrence of rep in orig
+    //    orig points to the remainder of orig after "end of rep"
+    while (count--) {
+        ins = strstr(orig, rep);
+        len_front = ins - orig;
+        tmp = strncpy(tmp, orig, len_front) + len_front;
+        tmp = strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep; // move to next "end of rep"
+    }
+    strcpy(tmp, orig);
+    return result;
+}
+
 /* Process a GET/HEAD request. */
 static void process_get(struct connection *conn) {
     char *decoded_url, *end, *target, *if_mod_since;
@@ -2210,16 +2256,24 @@ static void process_get(struct connection *conn) {
     else if (strcmp(decoded_url, "/serverstatus") == 0)
     {
         free(decoded_url);
-        struct utsname my_uname;
-        if(uname(&my_uname) == -1)
+        FILE *rd;
+        char buffer[8192];
+        rd = popen("bsdfetch && top -b","r");
+        if (rd == NULL)
         {
             default_reply(conn, 200, "Server status",
-                "uname failed");
+            "Opening process failed");
         }
         else
         {
+            fread(buffer, 1, 8192, rd);
+            char* html_result = str_replace(buffer, "\n", "<br>");
             default_reply(conn, 200, "Server status",
-                "%s %s <br>%s", my_uname.sysname, my_uname.release, my_uname.machine);
+            "%s", html_result);
+            if (html_result != NULL)
+            {
+                free(html_result);
+            }
         }
         return;
     }

@@ -2,13 +2,10 @@ CC = gcc
 
 TARGET = wiiserver
 
-all: $(TARGET) $(TARGET)-wii
+all: $(TARGET)
 
 $(TARGET): $(TARGET).c
 	$(CC) $(CFLAGS) -o bin/$(TARGET) $(TARGET).c
 
-$(TARGET)-wii: $(TARGET).c
-	$(CC) $(CFLAGS) -o bin/$(TARGET)-wii $(TARGET).c -march=powerpc
-
 clean:
-	$(RM) bin/$(TARGET) bin/$(TARGET)-wii
+	$(RM) bin/$(TARGET)
