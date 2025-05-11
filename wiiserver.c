@@ -2276,7 +2276,8 @@ static void process_get(struct connection *conn) {
             }
             else
             {
-                fread(buffer, 1, 8192, rd);
+                int length = fread(buffer, 1, 8192, rd);
+                buffer[length] = '\0';
                 char* html_result = str_replace(buffer, "\n", "<br>");
                 default_reply(conn, 200, "Server status", "%s", html_result);
                 free(buffer_cache);
