@@ -2182,7 +2182,7 @@ char* buffer_cache;
 time_t cache_time;
 /* Process a GET/HEAD request. */
 static void process_get(struct connection *conn) {
-    char *decoded_url, *end, *target, *if_mod_since;
+    char *decoded_url, *end, *target, *target_html, *if_mod_since;
     char date[DATE_LEN], lastmod[DATE_LEN];
     const char *mimetype = NULL;
     const char *forward_to = NULL;
@@ -2290,6 +2290,7 @@ static void process_get(struct connection *conn) {
     else {
         /* points to a file */
         xasprintf(&target, "%s%s", wwwroot, decoded_url);
+        xasprintf(&target_html, "%s%s.html", wwwroot, decoded_url);
         mimetype = url_content_type(decoded_url);
     }
 
@@ -2302,7 +2303,13 @@ static void process_get(struct connection *conn) {
     /* open file */
     conn->reply_fd = open(target, O_RDONLY | O_NONBLOCK);
     free(target);
-
+    if (conn->reply_fd == -1 &&  errno == ENOENT)
+    {
+        close(conn->reply_fd);
+        conn->reply_fd = open(target_html, O_RDONLY | O_NONBLOCK);
+        mimetype = "text/html";
+    }
+    free(target_html);
     if (conn->reply_fd == -1) {
         /* open() failed */
         if (errno == EACCES)
