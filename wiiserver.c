@@ -2290,7 +2290,15 @@ static void process_get(struct connection *conn) {
     else {
         /* points to a file */
         xasprintf(&target, "%s%s", wwwroot, decoded_url);
-        mimetype = url_content_type(decoded_url);
+        if (!file_exists(target)) {
+            free(target);
+            xasprintf(&target, "%s%s.html", wwwroot, decoded_url);
+            mimetype = url_content_type(index_name);
+        }
+        else
+        {
+            mimetype = url_content_type(decoded_url);
+        }
     }
 
     free(decoded_url);
