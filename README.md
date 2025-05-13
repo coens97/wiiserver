@@ -1,0 +1,3 @@
+# Wii server
+This server is forked from darkhttpd, see https://unix4lyfe.org/darkhttpd/.
+I made changes to the implementation. Firstly I have added the "/serverstatus" endpoint, in order to have a status page showing the "bsdfetch && top -b" command output to show on what system it is running and how much resources are available and being used. Secondly I added a fallback to add ".html" to opening files, this is needed to serve Next.JS static exports where the URL's generated have the file extension for pages cut off.
